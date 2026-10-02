@@ -1,0 +1,263 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "$connections": {
+      "defaultValue": {},
+      "type": "Object"
+    },
+    "ReviewCategory": {
+      "defaultValue": "phishing",
+      "type": "String"
+    },
+    "VerdictLabel": {
+      "defaultValue": "Phishing",
+      "type": "String"
+    }
+  },
+  "triggers": {
+    "Microsoft_Sentinel_incident": {
+      "type": "ApiConnectionWebhook",
+      "inputs": {
+        "body": {
+          "callback_url": "@{listCallbackUrl()}"
+        },
+        "host": {
+          "connection": {
+            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+          }
+        },
+        "path": "/incident-creation"
+      }
+    }
+  },
+  "actions": {
+    "Init_results": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "Results",
+            "type": "array",
+            "value": []
+          }
+        ]
+      },
+      "runAfter": {}
+    },
+    "Init_skipped": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "Skipped",
+            "type": "array",
+            "value": []
+          }
+        ]
+      },
+      "runAfter": {
+        "Init_results": [
+          "Succeeded"
+        ]
+      }
+    },
+    "List_user_reports": {
+      "type": "Http",
+      "inputs": {
+        "method": "GET",
+        "uri": "https://graph.microsoft.com/beta/security/threatSubmission/emailThreats",
+        "queries": {
+          "$filter": "@{concat('source eq ''user'' and createdDateTime ge ', formatDateTime(addDays(coalesce(triggerBody()?['object']?['properties']?['createdTimeUtc'], utcNow()), -3), 'yyyy-MM-ddTHH:mm:ssZ'))}"
+        },
+        "authentication": {
+          "type": "ManagedServiceIdentity",
+          "audience": "https://graph.microsoft.com"
+        }
+      },
+      "runtimeConfiguration": {
+        "paginationPolicy": {
+          "minimumItemCount": 5000
+        }
+      },
+      "runAfter": {
+        "Init_skipped": [
+          "Succeeded"
+        ]
+      }
+    },
+    "Reported_alerts": {
+      "type": "Query",
+      "inputs": {
+        "from": "@coalesce(triggerBody()?['object']?['properties']?['Alerts'], triggerBody()?['object']?['properties']?['alerts'], json('[]'))",
+        "where": "@contains(toLower(coalesce(item()?['properties']?['alertDisplayName'], '')), 'reported by user')"
+      },
+      "runAfter": {
+        "List_user_reports": [
+          "Succeeded"
+        ]
+      }
+    },
+    "For_each_alert": {
+      "type": "Foreach",
+      "foreach": "@body('Reported_alerts')",
+      "runtimeConfiguration": {
+        "concurrency": {
+          "repetitions": 1
+        }
+      },
+      "runAfter": {
+        "Reported_alerts": [
+          "Succeeded"
+        ]
+      },
+      "actions": {
+        "Alert_id_suffix": {
+          "type": "Compose",
+          "inputs": "@toLower(substring(concat('00000000000000000', coalesce(items('For_each_alert')?['properties']?['providerAlertId'], '')), length(coalesce(items('For_each_alert')?['properties']?['providerAlertId'], '')), 17))",
+          "runAfter": {}
+        },
+        "Matching_report": {
+          "type": "Query",
+          "inputs": {
+            "from": "@coalesce(body('List_user_reports')?['value'], json('[]'))",
+            "where": "@endsWith(toLower(coalesce(item()?['id'], '')), outputs('Alert_id_suffix'))"
+          },
+          "runAfter": {
+            "Alert_id_suffix": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Exactly_one_match": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@length(body('Matching_report'))",
+                  1
+                ]
+              }
+            ]
+          },
+          "runAfter": {
+            "Matching_report": [
+              "Succeeded"
+            ]
+          },
+          "actions": {
+            "If_not_reviewed_yet": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@first(body('Matching_report'))?['adminReview']",
+                      null
+                    ]
+                  }
+                ]
+              },
+              "runAfter": {},
+              "actions": {
+                "Mark_and_notify": {
+                  "type": "Http",
+                  "inputs": {
+                    "method": "POST",
+                    "uri": "https://graph.microsoft.com/beta/security/threatSubmission/emailThreats/@{first(body('Matching_report'))?['id']}/review",
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": {
+                      "category": "@{parameters('ReviewCategory')}"
+                    },
+                    "authentication": {
+                      "type": "ManagedServiceIdentity",
+                      "audience": "https://graph.microsoft.com"
+                    }
+                  },
+                  "runAfter": {}
+                },
+                "Record_success": {
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "Results",
+                    "value": "@concat('<b>', replace(replace(replace(coalesce(first(body('Matching_report'))?['subject'], '(no subject)'), '&', '&amp;'), '<', '&lt;'), '>', '&gt;'), '</b>: marked, reporter notified', if(empty(coalesce(first(body('Matching_report'))?['createdBy']?['email'], '')), '', concat(' (', coalesce(first(body('Matching_report'))?['createdBy']?['email'], ''), ')')))"
+                  },
+                  "runAfter": {
+                    "Mark_and_notify": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Record_failure": {
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "Results",
+                    "value": "@concat('<b>', replace(replace(replace(coalesce(first(body('Matching_report'))?['subject'], '(no subject)'), '&', '&amp;'), '<', '&lt;'), '>', '&gt;'), '</b>: not marked (HTTP ', string(outputs('Mark_and_notify')?['statusCode']), '). Try again, or use Open in Submissions.')"
+                  },
+                  "runAfter": {
+                    "Mark_and_notify": [
+                      "Failed",
+                      "TimedOut"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Record_skipped": {
+                    "runAfter": {},
+                    "type": "AppendToArrayVariable",
+                    "inputs": {
+                      "name": "Skipped",
+                      "value": "@replace(replace(replace(coalesce(first(body('Matching_report'))?['subject'], '(no subject)'), '&', '&amp;'), '<', '&lt;'), '>', '&gt;')"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Record_not_found": {
+                "type": "AppendToArrayVariable",
+                "inputs": {
+                  "name": "Results",
+                  "value": "@concat('Alert ', coalesce(items('For_each_alert')?['properties']?['providerAlertId'], 'unknown'), ': no single matching report (', string(length(body('Matching_report'))), ' found). Use Open in Submissions.')"
+                },
+                "runAfter": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "Add_comment_to_incident": {
+      "type": "ApiConnection",
+      "inputs": {
+        "host": {
+          "connection": {
+            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+          }
+        },
+        "method": "post",
+        "path": "/Incidents/Comment",
+        "body": {
+          "incidentArmId": "@triggerBody()?['object']?['id']",
+          "message": "@if(not(equals(actions('List_user_reports')?['status'], 'Succeeded')), concat('<p><b>No action taken</b><br>The playbook could not read the reported emails (HTTP ', string(coalesce(outputs('List_user_reports')?['statusCode'], 'unknown')), '). Check its Microsoft Graph permission, or use Open in Submissions.</p>'), if(greater(length(variables('Results')), 0), concat('<p><b>Verdict: ', parameters('VerdictLabel'), '</b><br>', join(variables('Results'), '<br>'), if(greater(length(variables('Skipped')), 0), concat('<br>', concat('Already reviewed (left unchanged, no email sent): ', join(variables('Skipped'), ', '))), ''), '</p>'), if(greater(length(variables('Skipped')), 0), concat('<p><b>Verdict: ', parameters('VerdictLabel'), ' (no change)</b><br>', concat('Already reviewed (left unchanged, no email sent): ', join(variables('Skipped'), ', ')), '</p>'), '<p><b>No action taken</b><br>This incident has no Email reported by user alerts.</p>')))"
+        }
+      },
+      "runAfter": {
+        "For_each_alert": [
+          "Succeeded",
+          "Failed",
+          "Skipped",
+          "TimedOut"
+        ]
+      }
+    }
+  },
+  "outputs": {}
+}

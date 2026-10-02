@@ -1,0 +1,414 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "$connections": {
+      "defaultValue": {},
+      "type": "Object"
+    }
+  },
+  "triggers": {
+    "Microsoft_Sentinel_incident": {
+      "type": "ApiConnectionWebhook",
+      "inputs": {
+        "body": {
+          "callback_url": "@{listCallbackUrl()}"
+        },
+        "host": {
+          "connection": {
+            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+          }
+        },
+        "path": "/incident-creation"
+      }
+    }
+  },
+  "actions": {
+    "Init_posted": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "Posted",
+            "type": "array",
+            "value": []
+          }
+        ]
+      },
+      "runAfter": {}
+    },
+    "Init_need_links": {
+      "type": "InitializeVariable",
+      "runAfter": {
+        "Init_posted": [
+          "Succeeded"
+        ]
+      },
+      "inputs": {
+        "variables": [
+          {
+            "name": "NeedLinks",
+            "type": "boolean",
+            "value": false
+          }
+        ]
+      }
+    },
+    "Existing_comments": {
+      "type": "Compose",
+      "inputs": "@string(coalesce(triggerBody()?['object']?['properties']?['comments'], json('[]')))",
+      "runAfter": {}
+    },
+    "List_user_reports": {
+      "type": "Http",
+      "inputs": {
+        "method": "GET",
+        "uri": "https://graph.microsoft.com/beta/security/threatSubmission/emailThreats",
+        "queries": {
+          "$filter": "@{concat('source eq ''user'' and createdDateTime ge ', formatDateTime(addDays(coalesce(triggerBody()?['object']?['properties']?['createdTimeUtc'], utcNow()), -3), 'yyyy-MM-ddTHH:mm:ssZ'))}"
+        },
+        "authentication": {
+          "type": "ManagedServiceIdentity",
+          "audience": "https://graph.microsoft.com"
+        }
+      },
+      "runtimeConfiguration": {
+        "paginationPolicy": {
+          "minimumItemCount": 5000
+        }
+      },
+      "runAfter": {
+        "Init_need_links": [
+          "Succeeded"
+        ]
+      }
+    },
+    "Set_need_links_graph_failed": {
+      "type": "SetVariable",
+      "runAfter": {
+        "List_user_reports": [
+          "Failed",
+          "TimedOut"
+        ]
+      },
+      "inputs": {
+        "name": "NeedLinks",
+        "value": true
+      }
+    },
+    "Reported_alerts": {
+      "type": "Query",
+      "inputs": {
+        "from": "@coalesce(triggerBody()?['object']?['properties']?['Alerts'], triggerBody()?['object']?['properties']?['alerts'], json('[]'))",
+        "where": "@contains(toLower(coalesce(item()?['properties']?['alertDisplayName'], '')), 'reported by user')"
+      },
+      "runAfter": {}
+    },
+    "For_each_alert": {
+      "type": "Foreach",
+      "foreach": "@body('Reported_alerts')",
+      "runtimeConfiguration": {
+        "concurrency": {
+          "repetitions": 1
+        }
+      },
+      "runAfter": {
+        "Reported_alerts": [
+          "Succeeded"
+        ],
+        "Existing_comments": [
+          "Succeeded"
+        ],
+        "List_user_reports": [
+          "Succeeded"
+        ]
+      },
+      "actions": {
+        "Alert_id_suffix": {
+          "type": "Compose",
+          "inputs": "@toLower(substring(concat('00000000000000000', coalesce(items('For_each_alert')?['properties']?['providerAlertId'], '')), length(coalesce(items('For_each_alert')?['properties']?['providerAlertId'], '')), 17))",
+          "runAfter": {}
+        },
+        "Matching_report": {
+          "type": "Query",
+          "inputs": {
+            "from": "@coalesce(body('List_user_reports')?['value'], json('[]'))",
+            "where": "@endsWith(toLower(coalesce(item()?['id'], '')), outputs('Alert_id_suffix'))"
+          },
+          "runAfter": {
+            "Alert_id_suffix": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Exactly_one_match": {
+          "type": "If",
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@length(body('Matching_report'))",
+                  1
+                ]
+              }
+            ]
+          },
+          "runAfter": {
+            "Matching_report": [
+              "Succeeded"
+            ]
+          },
+          "actions": {
+            "Result_text": {
+              "type": "Compose",
+              "runAfter": {},
+              "inputs": "@coalesce(json('{\"beingAnalyzed\":\"In progress\",\"notJunk\":\"No threats found\",\"noThreatsFound\":\"No threats found\",\"phishing\":\"Phishing\",\"spam\":\"Spam\",\"malware\":\"Malware\",\"threatsFound\":\"Threats found\",\"phishingSimulation\":\"Phishing simulation\",\"allowedByPolicy\":\"Allowed by policy\",\"blockedByPolicy\":\"Blocked by policy\",\"spoof\":\"Spoof\",\"noResultAvailable\":\"No result available\",\"notSubmittedToMicrosoft\":\"Not submitted to Microsoft\",\"unknown\":\"Unknown\"}')?[coalesce(first(body('Matching_report'))?['result']?['category'], 'none')], first(body('Matching_report'))?['result']?['category'], 'Not available')"
+            },
+            "Review_text": {
+              "type": "Compose",
+              "runAfter": {
+                "Result_text": [
+                  "Succeeded"
+                ]
+              },
+              "inputs": "@if(equals(first(body('Matching_report'))?['adminReview'], null), '<b>Not reviewed yet</b>', concat('<b>', coalesce(json('{\"notJunk\":\"No threats found\",\"phishing\":\"Phishing\",\"spam\":\"Spam\",\"malware\":\"Malware\"}')?[coalesce(first(body('Matching_report'))?['adminReview']?['reviewResult'], 'none')], first(body('Matching_report'))?['adminReview']?['reviewResult'], '?'), '</b> (set by ', if(contains(coalesce(first(body('Matching_report'))?['adminReview']?['reviewBy'], ''), '@'), first(body('Matching_report'))?['adminReview']?['reviewBy'], 'a playbook'), if(empty(coalesce(first(body('Matching_report'))?['adminReview']?['reviewDateTime'], '')), '', concat(' on ', formatDateTime(first(body('Matching_report'))?['adminReview']?['reviewDateTime'], 'MMM d, HH:mm'), ' UTC')), ')'))"
+            },
+            "Ref_key": {
+              "type": "Compose",
+              "runAfter": {
+                "Review_text": [
+                  "Succeeded"
+                ]
+              },
+              "inputs": "@concat('mdo-rd-', first(body('Matching_report'))?['id'], '-', coalesce(first(body('Matching_report'))?['result']?['category'], 'none'), '-', coalesce(first(body('Matching_report'))?['adminReview']?['reviewResult'], 'unreviewed'), '.')"
+            },
+            "Subject_html": {
+              "type": "Compose",
+              "runAfter": {
+                "Ref_key": [
+                  "Succeeded"
+                ]
+              },
+              "inputs": "@replace(replace(replace(coalesce(first(body('Matching_report'))?['subject'], '(no subject)'), '&', '&amp;'), '<', '&lt;'), '>', '&gt;')"
+            },
+            "Sender_html": {
+              "type": "Compose",
+              "runAfter": {
+                "Subject_html": [
+                  "Succeeded"
+                ]
+              },
+              "inputs": "@replace(replace(replace(coalesce(first(body('Matching_report'))?['sender'], 'unknown'), '&', '&amp;'), '<', '&lt;'), '>', '&gt;')"
+            },
+            "Reporter_html": {
+              "type": "Compose",
+              "runAfter": {
+                "Sender_html": [
+                  "Succeeded"
+                ]
+              },
+              "inputs": "@replace(replace(replace(coalesce(first(body('Matching_report'))?['createdBy']?['email'], 'unknown'), '&', '&amp;'), '<', '&lt;'), '>', '&gt;')"
+            },
+            "Status_comment": {
+              "type": "Compose",
+              "runAfter": {
+                "Reporter_html": [
+                  "Succeeded"
+                ]
+              },
+              "inputs": "@concat('<p><b>Reported email: ', outputs('Subject_html'), '</b><br>', 'Analyst verdict: ', outputs('Review_text'), '<br>', 'Microsoft analysis: ', outputs('Result_text'), '<br>', 'Sender: ', outputs('Sender_html'), '<br>', 'Reported by: ', outputs('Reporter_html'), ' on ', formatDateTime(first(body('Matching_report'))?['createdDateTime'], 'MMM d, HH:mm'), ' UTC (as ', if(equals(first(body('Matching_report'))?['category'], 'spam'), 'junk', if(equals(first(body('Matching_report'))?['category'], 'notJunk'), 'not junk', coalesce(first(body('Matching_report'))?['category'], 'unknown'))), if(equals(first(body('Matching_report'))?['attackSimulationInfo'], null), '', '; attack simulation'), ')<br>', '<a href=\"', concat('https://security.microsoft.com/reportsubmission?viewid=user&userSubmissionFilter=', encodeUriComponent(concat('{\"Id\":[\"', first(body('Matching_report'))?['id'], '\"],\"Date\":[\"', formatDateTime(addDays(first(body('Matching_report'))?['createdDateTime'], -2), 'yyyy-MM-ddTHH:mm:ss.fffZ'), '\",\"', formatDateTime(addDays(first(body('Matching_report'))?['createdDateTime'], 2), 'yyyy-MM-ddTHH:mm:ss.fffZ'), '\"]}')), '&mdoref=', outputs('Ref_key')), '\">Open in Submissions</a></p>')"
+            },
+            "If_new_or_changed": {
+              "type": "If",
+              "runAfter": {
+                "Status_comment": [
+                  "Succeeded"
+                ]
+              },
+              "expression": {
+                "and": [
+                  {
+                    "not": {
+                      "contains": [
+                        "@outputs('Existing_comments')",
+                        "@outputs('Ref_key')"
+                      ]
+                    }
+                  },
+                  {
+                    "not": {
+                      "contains": [
+                        "@variables('Posted')",
+                        "@outputs('Ref_key')"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "actions": {
+                "Add_status_comment": {
+                  "type": "ApiConnection",
+                  "runAfter": {},
+                  "inputs": {
+                    "host": {
+                      "connection": {
+                        "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                      }
+                    },
+                    "method": "post",
+                    "path": "/Incidents/Comment",
+                    "body": {
+                      "incidentArmId": "@triggerBody()?['object']?['id']",
+                      "message": "@outputs('Status_comment')"
+                    }
+                  }
+                },
+                "Record_posted": {
+                  "type": "AppendToArrayVariable",
+                  "runAfter": {
+                    "Add_status_comment": [
+                      "Succeeded"
+                    ]
+                  },
+                  "inputs": {
+                    "name": "Posted",
+                    "value": "@outputs('Ref_key')"
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Set_need_links_unmatched": {
+                "type": "SetVariable",
+                "runAfter": {},
+                "inputs": {
+                  "name": "NeedLinks",
+                  "value": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Mail_messages": {
+      "type": "Query",
+      "inputs": {
+        "from": "@coalesce(triggerBody()?['object']?['properties']?['relatedEntities'], json('[]'))",
+        "where": "@and(equals(item()?['kind'], 'MailMessage'), not(startsWith(coalesce(item()?['properties']?['subject'], ''), 'Phishing:')), not(startsWith(coalesce(item()?['properties']?['subject'], ''), 'Junk:')), not(startsWith(coalesce(item()?['properties']?['subject'], ''), 'Not junk:')), not(contains(string(coalesce(triggerBody()?['object']?['properties']?['comments'], json('[]'))), coalesce(item()?['properties']?['networkMessageId'], '#none#'))))"
+      },
+      "runAfter": {}
+    },
+    "Window_start": {
+      "type": "Compose",
+      "inputs": "@formatDateTime(addDays(coalesce(triggerBody()?['object']?['properties']?['createdTimeUtc'], utcNow()), -2), 'yyyy-MM-ddTHH:mm:ss.fffZ')",
+      "runAfter": {}
+    },
+    "Window_end": {
+      "type": "Compose",
+      "inputs": "@formatDateTime(addDays(coalesce(triggerBody()?['object']?['properties']?['createdTimeUtc'], utcNow()), 2), 'yyyy-MM-ddTHH:mm:ss.fffZ')",
+      "runAfter": {}
+    },
+    "Link_rows": {
+      "type": "Select",
+      "inputs": {
+        "from": "@body('Mail_messages')",
+        "select": "@concat('<p><b>Reported email: ', replace(replace(replace(coalesce(item()?['properties']?['subject'], '(no subject)'), '&', '&amp;'), '<', '&lt;'), '>', '&gt;'), '</b><br>Received by: ', replace(replace(replace(coalesce(item()?['properties']?['recipient'], 'unknown'), '&', '&amp;'), '<', '&lt;'), '>', '&gt;'), '<br>Details are not available right now.<br><a href=\"', concat('https://security.microsoft.com/reportsubmission?viewid=user&userSubmissionFilter=', encodeUriComponent(concat('{\"ObjectId\":[\"', item()?['properties']?['networkMessageId'], '\"],\"Date\":[\"', outputs('Window_start'), '\",\"', outputs('Window_end'), '\"]}'))), '\">Open in Submissions</a></p>')"
+      },
+      "runAfter": {
+        "Mail_messages": [
+          "Succeeded"
+        ],
+        "Window_start": [
+          "Succeeded"
+        ],
+        "Window_end": [
+          "Succeeded"
+        ]
+      }
+    },
+    "If_need_links": {
+      "type": "If",
+      "expression": {
+        "and": [
+          {
+            "greater": [
+              "@length(body('Reported_alerts'))",
+              0
+            ]
+          },
+          {
+            "equals": [
+              "@variables('NeedLinks')",
+              true
+            ]
+          },
+          {
+            "greater": [
+              "@length(body('Link_rows'))",
+              0
+            ]
+          }
+        ]
+      },
+      "runAfter": {
+        "For_each_alert": [
+          "Succeeded",
+          "Failed",
+          "Skipped",
+          "TimedOut"
+        ],
+        "Link_rows": [
+          "Succeeded"
+        ],
+        "Set_need_links_graph_failed": [
+          "Succeeded",
+          "Skipped"
+        ],
+        "Reported_alerts": [
+          "Succeeded"
+        ]
+      },
+      "actions": {
+        "For_each_link": {
+          "type": "Foreach",
+          "foreach": "@body('Link_rows')",
+          "runtimeConfiguration": {
+            "concurrency": {
+              "repetitions": 1
+            }
+          },
+          "runAfter": {},
+          "actions": {
+            "Add_link_comment": {
+              "type": "ApiConnection",
+              "runAfter": {},
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+                  }
+                },
+                "method": "post",
+                "path": "/Incidents/Comment",
+                "body": {
+                  "incidentArmId": "@triggerBody()?['object']?['id']",
+                  "message": "@items('For_each_link')"
+                }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "actions": {}
+      }
+    }
+  },
+  "outputs": {}
+}
