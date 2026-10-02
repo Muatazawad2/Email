@@ -857,3 +857,7 @@ concat('<b>Reported email: ', replace(replace(replace(coalesce(item()?['properti
 <tr><td>Duplicate comments</td><td>For each concurrency isn't set to 1, or two Details playbooks (for example, one from the template and one built by hand) both run from automation rules.</td></tr>
 <tr><td>Verdict API returns 400</td><td>ReviewCategory has an unsupported value. Use <code>phishing</code>, <code>spam</code> or <code>notJunk</code>.</td></tr>
 </tbody></table>
+
+---
+
+**Developer**: Dr. Muataz Awad

@@ -19,3 +19,7 @@ Invoke-EmailDnsAudit -DomainInput contoso.com, fabrikam.com -OutputHtml ./email-
 ## License
 
 [MIT](LICENSE)
+
+---
+
+**Developer**: Dr. Muataz Awad

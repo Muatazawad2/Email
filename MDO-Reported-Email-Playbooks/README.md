@@ -317,3 +317,7 @@ Tested end to end in a lab tenant with Microsoft Defender XDR and Microsoft Sent
 ## License
 
 [MIT](../LICENSE). Provided as-is, without warranty or support. Review and test it in your environment before using it in production.
+
+---
+
+**Developer**: Dr. Muataz Awad
