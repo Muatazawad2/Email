@@ -451,6 +451,8 @@ foreach ($name in $grants.Keys) {
 
 <p>Open the incident → <b>…</b> (top right) → <b>Run playbook</b> → find <b>MDO-Submission-Notify-Phishing</b> → <b>Run playbook</b>. The <b>Runs</b> tab in the same pane shows whether it started.</p>
 
+<p><img src="images/test-more-menu.png" alt="The … menu at the top right of the incident → Run playbook" width="242"><br><sub>The … menu at the top right of the incident → Run playbook</sub></p>
+
 ### Read the run history
 
 <p>In the Azure portal: the playbook → <b>Overview → Run history</b> → select the run. Every step shows a green tick or a red cross. Select a step to see its exact inputs and outputs. This is how you debug any playbook.</p>
@@ -458,6 +460,8 @@ foreach ($name in $grants.Keys) {
 ### Check the results
 
 <p>In the incident's <b>Activities</b>, a comment starting <i>Verdict: Phishing</i> lists what changed. Within about two minutes, the reporter receives <i>Results on the email you reported</i>. Run the playbook again: the comment should now say <i>(no change)</i>, and no second email is sent.</p>
+
+<p><img src="images/test-activities.png" alt="Activities after several test runs: the first run marks the email, and later runs post (no change)"><br><sub>The first run marks the email (bottom row). Later runs, from any Notify playbook, post “(no change)” because the email is already reviewed.</sub></p>
 
 ## Part 6 · Clone for No threats found and Spam
 
@@ -521,6 +525,8 @@ flowchart TD
 | **Variable 1** | <code>Posted</code> · <b>Array</b> · <code>[]</code>  (emails already commented in this run) |
 | **Variable 2** | <code>NeedLinks</code> · <b>Boolean</b> · <code>false</code>  (post fallback links?) |
 
+<p><img src="images/details-init-variables.png" alt="Init variables: Posted (Array, []) and NeedLinks (Boolean, false)" width="480"><br><sub>Init variables: Posted (Array, []) and NeedLinks (Boolean, false)</sub></p>
+
 ### 2. Existing comments
 
 **Type:** Compose &nbsp;·&nbsp; **Where:** Under Init variables
@@ -548,6 +554,8 @@ string(coalesce(triggerBody()?['object']?['properties']?['comments'], json('[]')
 | **Name / Value** | <code>NeedLinks</code> · fx <code>true</code> |
 | **Settings → Run after** | List user reports: only <b>Has failed</b> and <b>Has timed out</b> |
 
+<p><img src="images/details-need-links-runafter.png" alt="Run after: only Has timed out and Has failed of List user reports" width="480"><br><sub>Run after: only Has timed out and Has failed of List user reports</sub></p>
+
 ### 5. Reported alerts
 
 **Type:** Filter array &nbsp;·&nbsp; **Where:** Under Set need links on error
@@ -557,6 +565,8 @@ string(coalesce(triggerBody()?['object']?['properties']?['comments'], json('[]')
 | Field | What to enter |
 |---|---|
 | **Settings → Run after** | Set need links on error: <b>Is successful</b> and <b>Is skipped</b>, so it runs whether or not Graph worked |
+
+<p><img src="images/details-alerts-runafter.png" alt="Run after: Is successful and Is skipped of Set need links on error" width="480"><br><sub>Run after: Is successful and Is skipped of Set need links on error</sub></p>
 
 ### 6. For each alert
 
@@ -671,9 +681,11 @@ concat('<b>Reported email: ', outputs('Subject_html'), '</b><br>', 'Analyst verd
 
 | Field | What to enter |
 |---|---|
-| **Row 1** | fx <code>outputs('Existing_comments')</code> · <b>does not contain</b> · fx <code>outputs('Ref_key')</code> |
-| **New item → Add row: row 2** | fx <code>variables('Posted')</code> · <b>does not contain</b> · fx <code>outputs('Ref_key')</code> |
+| **Row 1** | fx <code>outputs('Existing_comments')</code> · <b>not contains</b> · fx <code>outputs('Ref_key')</code> |
+| **New item → Add row: row 2** | fx <code>variables('Posted')</code> · <b>not contains</b> · fx <code>outputs('Ref_key')</code> |
 | **Group** | Leave <b>AND</b> |
+
+<table><tr><td valign="top" width="50%"><img src="images/details-not-contains.png" alt="The operator list: pick not contains"><br><sub>The operator list: pick not contains</sub></td><td valign="top" width="50%"><img src="images/details-if-new-code.png" alt="Code view: two not contains checks joined by and"><br><sub>Code view: two not contains checks joined by and</sub></td></tr></table>
 
 <p>Build 6l and 6m in its <b>True</b> box.</p>
 
@@ -685,6 +697,8 @@ concat('<b>Reported email: ', outputs('Subject_html'), '</b><br>', 'Analyst verd
 |---|---|
 | **Incident ARM id** | Lightning → Incident ARM ID |
 | **Incident comment message** | Lightning → <b>Status comment</b> → <b>Outputs</b> |
+
+<p><img src="images/details-add-status-comment.png" alt="Incident ARM ID from the trigger, and the Outputs of Status comment as the message" width="480"><br><sub>Incident ARM ID from the trigger, and the Outputs of Status comment as the message</sub></p>
 
 ### 6m. Record posted
 
@@ -726,6 +740,8 @@ coalesce(triggerBody()?['object']?['properties']?['relatedEntities'], json('[]')
 and(equals(item()?['kind'], 'MailMessage'), not(startsWith(coalesce(item()?['properties']?['subject'], ''), 'Phishing:')), not(startsWith(coalesce(item()?['properties']?['subject'], ''), 'Junk:')), not(startsWith(coalesce(item()?['properties']?['subject'], ''), 'Not junk:')), not(contains(string(coalesce(triggerBody()?['object']?['properties']?['comments'], json('[]'))), coalesce(item()?['properties']?['networkMessageId'], '#none#'))))
 ```
 
+<table><tr><td valign="top" width="50%"><img src="images/details-mail-messages.png" alt="From and Filter Query, all through fx"><br><sub>From and Filter Query, all through fx</sub></td><td valign="top" width="50%"><img src="images/details-mail-runafter.png" alt="Run after: all four outcomes of For each alert"><br><sub>Run after: all four outcomes of For each alert</sub></td></tr></table>
+
 ### 8. Window start
 
 **Type:** Compose &nbsp;·&nbsp; **Where:** Under Mail messages
@@ -756,6 +772,8 @@ formatDateTime(addDays(coalesce(triggerBody()?['object']?['properties']?['create
 | **Row 2** | fx <code>variables('NeedLinks')</code> · <b>=</b> · fx <code>true</code> |
 | **Row 3** | fx <code>length(body('Mail_messages'))</code> · <b>&gt;</b> · <code>0</code> |
 
+<p><img src="images/details-if-need-links.png" alt="Three rows joined by AND" width="480"><br><sub>Three rows joined by AND</sub></p>
+
 <p>Build 11–13 in its <b>True</b> box.</p>
 
 ### 11. For each link
@@ -766,6 +784,8 @@ formatDateTime(addDays(coalesce(triggerBody()?['object']?['properties']?['create
 |---|---|
 | **Output** | Lightning → Mail messages → <b>Body</b> |
 | **Settings** | Concurrency Limit On, Degree of parallelism 1 |
+
+<table><tr><td valign="top" width="50%"><img src="images/details-foreach-link.png" alt="Output: Body of Mail messages"><br><sub>Output: Body of Mail messages</sub></td><td valign="top" width="50%"><img src="images/details-foreach-link-settings.png" alt="Settings → Concurrency control: Limit On, Degree of parallelism 1"><br><sub>Settings → Concurrency control: Limit On, Degree of parallelism 1</sub></td></tr></table>
 
 ### 12. Link comment
 
@@ -789,6 +809,8 @@ concat('<b>Reported email: ', replace(replace(replace(coalesce(item()?['properti
 ### Save, permissions, test
 
 <p><b>Save</b>, then give Details the <b>Microsoft Sentinel Responder</b> role and <code>ThreatSubmission.Read.All</code> (<a href="#part-4--give-the-playbook-its-permissions">Part 4</a>). Test it with <b>Run playbook</b> on a reported-phish incident. You should see one <i>Reported email: &lt;subject&gt;</i> comment per email. Run it again and nothing new is posted until a verdict changes.</p>
+
+<p><img src="images/details-test-comment.png" alt="A Reported email comment from the hand-built Details playbook, in the incident's Activities" width="585"><br><sub>A Reported email comment from the hand-built Details playbook, in the incident's Activities</sub></p>
 
 ## Part 8 · Automation rules (run Details on its own)
 
@@ -816,6 +838,8 @@ concat('<b>Reported email: ', replace(replace(replace(coalesce(item()?['properti
 | **Condition 2 (AND)** | Property <b>Alert product names</b> · <b>Contains</b> · <b>Microsoft Defender for Office 365</b> |
 | **Actions** | <b>Run playbook</b> → <b>MDO-Submission-Details</b> |
 | **Order** | <code>101</code> |
+
+<p><img src="images/rule2-product-value.png" alt="Condition 2: Choose Value → search Office 365 → tick Microsoft Defender for Office 365" width="620"><br><sub>Condition 2: Choose Value → search Office 365 → tick Microsoft Defender for Office 365</sub></p>
 
 <p><img src="images/rule-101.png" alt="Rule 2" width="620"><br><sub>Rule 2</sub></p>
 
