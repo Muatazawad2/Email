@@ -21,6 +21,7 @@ Four Logic Apps playbooks that bring **Microsoft Defender for Office 365 user-re
 - [What it looks like](#what-it-looks-like)
 - [The playbooks](#the-playbooks)
 - [How it works](#how-it-works)
+- [Screenshots](#screenshots)
 - [Prerequisites](#prerequisites)
 - [Deploy](#deploy)
 - [What gets created](#what-gets-created)
@@ -93,6 +94,33 @@ sequenceDiagram
 - **No duplicate comments or emails.** Details hides a short reference key, made of the submission ID, Microsoft's result and the verdict, in each comment's link. It compares the keys with the incident's existing comments and posts only what's new or changed. The Notify playbooks only mark emails that nobody has reviewed yet, so running one twice never sends a second email.
 - **Safe to display.** Text that comes from the email itself, such as the subject and the sender, is HTML-escaped before it's written into a comment, so a crafted subject line can't plant a link in the incident.
 - **Least privilege.** Each playbook has its own system-assigned managed identity. Details only reads reports (`ThreatSubmission.Read.All`). Only the Notify playbooks can mark them (`ThreatSubmission.ReadWrite.All`).
+
+## Screenshots
+
+These are from building and testing the playbooks in the Azure and Defender portals. Select a screenshot to open that step in the [step-by-step guide](docs/build-in-the-portal.md), which covers every step with screenshots.
+
+<table>
+<tr>
+<td width="50%" valign="top"><a href="docs/build-in-the-portal.md#start-the-playbook-wizard"><img src="docs/images/cards/01-create.png" alt="Automation, Create, Playbook with incident trigger" width="420"></a><br><b>1. Create the playbook.</b> In the Defender portal: <b>Automation → Create → Playbook with incident trigger</b>.</td>
+<td width="50%" valign="top"><a href="docs/build-in-the-portal.md#basics-and-connections"><img src="docs/images/cards/02-basics.png" alt="Playbook wizard, Basics tab" width="420"></a><br><b>2. Name it.</b> The wizard turns on the playbook's managed identity and creates the Sentinel connection.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/build-in-the-portal.md#2-list-user-reports"><img src="docs/images/cards/03-list-reports.png" alt="HTTP action that lists user reports from Microsoft Graph" width="420"></a><br><b>3. Read the user reports.</b> An HTTP action calls Microsoft Graph as the playbook's managed identity.</td>
+<td width="50%" valign="top"><a href="docs/build-in-the-portal.md#6-matching-report"><img src="docs/images/cards/04-match-report.png" alt="Filter array that matches the report to the alert" width="420"></a><br><b>4. Find the report behind each alert.</b> Its ID ends with the same 17 characters as the alert ID.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/build-in-the-portal.md#8-if-not-reviewed-yet"><img src="docs/images/cards/05-not-reviewed.png" alt="If not reviewed yet condition with its True and False branches" width="420"></a><br><b>5. Skip emails that are already reviewed.</b> Nobody gets a second result email.</td>
+<td width="50%" valign="top"><a href="docs/build-in-the-portal.md#9-mark-and-notify"><img src="docs/images/cards/06-mark-notify.png" alt="HTTP action that marks the reported email" width="420"></a><br><b>6. Mark and notify.</b> One Graph call sets the verdict, and Microsoft emails the result to the reporter.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/build-in-the-portal.md#6l-add-status-comment"><img src="docs/images/cards/07-status-comment.png" alt="Add status comment action in the Details playbook" width="420"></a><br><b>7. Post the status.</b> Details adds one comment per reported email.</td>
+<td width="50%" valign="top"><a href="docs/build-in-the-portal.md#let-sentinel-run-playbooks-in-that-resource-group"><img src="docs/images/cards/08-permissions.png" alt="Playbook permissions in the workspace settings" width="420"></a><br><b>8. Let Sentinel start the playbooks.</b> <b>Playbook permissions</b> on their resource group.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/build-in-the-portal.md#rule-1-a-new-reported-phish-incident"><img src="docs/images/cards/09-automation-rule.png" alt="Automation rule that runs Details on new reported-phish incidents" width="420"></a><br><b>9. Run Details automatically.</b> An automation rule for each new reported-phish incident.</td>
+<td width="50%" valign="top"><a href="docs/build-in-the-portal.md#save-permissions-test"><img src="docs/images/cards/10-test-result.png" alt="Reported email status comment in the incident" width="420"></a><br><b>10. Check the result.</b> The status comment in the incident's <b>Activities</b>.</td>
+</tr>
+</table>
 
 ## Prerequisites
 
