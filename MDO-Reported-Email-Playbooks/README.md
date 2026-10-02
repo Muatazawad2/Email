@@ -133,11 +133,23 @@ cd Email/MDO-Reported-Email-Playbooks
 
 ### Option 2: Deploy to Azure
 
-1. Select **Deploy to Azure** at the top of this page. Choose the resource group for the playbooks and enter the workspace name and its resource group.
-2. The two automation rules can only be created once Microsoft Sentinel has permission on the playbooks' resource group. If you haven't granted that yet (Defender portal → **Settings → Microsoft Sentinel → SIEM workspaces** → the workspace → **Playbook permissions**):
-   - enter the object ID of the **Azure Security Insights** service principal in **Sentinel Service Principal Object Id** (Microsoft Entra admin center → **Enterprise applications**), and set **Deploy Automation Rules** to `false`
-   - a few minutes later, deploy again with **Deploy Automation Rules** set to `true`. Redeploying is safe.
-3. Grant the Microsoft Graph permissions. The portal has no screen for granting an app role to a managed identity, so run this in **Cloud Shell (PowerShell)** as a Global Administrator or Privileged Role Administrator:
+You deploy twice: first the playbooks and their permissions, then the two automation rules. Microsoft Sentinel can only create the rules once its permission on the playbooks' resource group has taken effect.
+
+1. Get the object ID of Microsoft Sentinel's service account, the **Azure Security Insights** enterprise application. In **Cloud Shell** (Bash or PowerShell), run:
+
+   ```
+   az ad sp show --id 98785600-1bb7-4fb9-b9fa-19afe2c8a360 --query id -o tsv
+   ```
+
+   Skip this if Sentinel already has permission on the resource group you'll use (Defender portal → **Settings → Microsoft Sentinel → SIEM workspaces** → the workspace → **Playbook permissions**).
+2. Select **Deploy to Azure** at the top of this page and fill in:
+   - **Resource group**: where the playbooks go. You can create a new one.
+   - **Workspace Name** and **Workspace Resource Group**: your Sentinel workspace.
+   - **Sentinel Service Principal Object Id**: the ID from step 1. Leave it empty if you skipped step 1.
+   - **Deploy Automation Rules**: leave it set to `false`.
+
+   Select **Review + create**, then **Create**.
+3. Grant the Microsoft Graph permissions. Do this before the playbooks first run, because a playbook's access token can be cached for up to 24 hours. The portal has no screen for granting an app role to a managed identity, so run this in **Cloud Shell (PowerShell)** as a Global Administrator or Privileged Role Administrator. If you changed **Playbook Prefix**, change the four names to match.
 
    <details>
    <summary>Grant the Microsoft Graph permissions (PowerShell)</summary>
@@ -170,7 +182,9 @@ cd Email/MDO-Reported-Email-Playbooks
 
    </details>
 
-   Running `deploy.ps1` with the same values does the same thing.
+4. Create the automation rules: deploy again with the same values and **Deploy Automation Rules** set to `true`. The quickest way is **Redeploy** on the first deployment (the resource group → **Deployments**). If it fails with *Missing required permissions for Microsoft Sentinel on the playbook resource*, Sentinel's permission hasn't taken effect yet. Wait a few minutes and deploy again; redeploying is safe.
+
+Running `deploy.ps1` with the same values does all four steps for you.
 
 ### Option 3: Build it by hand
 
@@ -235,6 +249,8 @@ In the Defender portal, go to **Settings → Email & collaboration → User repo
 
 | What you see | Likely cause and fix |
 |---|---|
+| The deployment fails with *Missing required permissions for Microsoft Sentinel on the playbook resource* | The automation rules were deployed before Sentinel had permission on the playbooks' resource group. Everything else was created. Set **Sentinel Service Principal Object Id** (see [Option 2](#option-2-deploy-to-azure)), wait a few minutes, and deploy again with **Deploy Automation Rules** set to `true`. |
+| The deployment fails with *RoleAssignmentExists* | Sentinel already has permission on that resource group. Deploy again with **Sentinel Service Principal Object Id** left empty. |
 | **List user reports** fails with 401 or 403 | The Microsoft Graph permission is missing or not active yet. Grant it (see [Deploy](#deploy)), then wait. A managed identity's token can be cached for up to 24 hours, so grant the permission before the first run where you can. |
 | **Add comment** fails with *Forbidden* | The playbook's identity lacks **Microsoft Sentinel Responder** on the workspace. |
 | The playbook isn't listed under **Run playbook** | It must use the Microsoft Sentinel incident trigger and be enabled, and Sentinel needs permission on its resource group: Defender portal → **Settings → Microsoft Sentinel → SIEM workspaces** → the workspace → **Playbook permissions**. |

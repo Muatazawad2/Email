@@ -4,7 +4,7 @@
   "metadata": {
     "title": "MDO user-reported phishing - Sentinel playbooks",
     "description": "Workaround for the View submission null Item ID on the Email reported by user as malware or phish alert: posts the reported email status (reporter, Microsoft analysis, analyst verdict) with a working Open in Submissions link on each incident, and lets analysts mark reported emails as No threats found, Phishing or Spam and notify the reporter from Run playbook.",
-    "version": "2.0 (2026-09-28)"
+    "version": "2.1 (2026-10-02)"
   },
   "parameters": {
     "WorkspaceName": {
@@ -17,7 +17,7 @@
       "type": "string",
       "defaultValue": "[resourceGroup().name]",
       "metadata": {
-        "description": "Resource group of the Sentinel workspace (defaults to the deployment resource group)."
+        "description": "Resource group of the Sentinel workspace. Keep the default only if the workspace is in the resource group you're deploying to."
       }
     },
     "PlaybookPrefix": {
@@ -39,14 +39,14 @@
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "Object ID of the 'Azure Security Insights' service principal (appId 98785600-1bb7-4fb9-b9fa-19afe2c8a360). If set, it gets Microsoft Sentinel Automation Contributor on this resource group so automation rules and Run playbook can start the playbooks. Leave empty if it already has that role."
+        "description": "Object ID of Microsoft Sentinel's service account, the Azure Security Insights enterprise application. Get it in Cloud Shell: az ad sp show --id 98785600-1bb7-4fb9-b9fa-19afe2c8a360 --query id -o tsv. Sentinel then gets Microsoft Sentinel Automation Contributor on this resource group, so Run playbook and automation rules can start the playbooks. Leave empty if Sentinel already has Playbook permissions on this resource group."
       }
     },
     "DeployAutomationRules": {
       "type": "bool",
-      "defaultValue": true,
+      "defaultValue": false,
       "metadata": {
-        "description": "Create the two automation rules that run the Details playbook automatically."
+        "description": "Create the two automation rules that run the Details playbook automatically. Leave false on the first deployment. About two minutes later, deploy again with true: Sentinel can only create the rules once its permission on this resource group has taken effect."
       }
     },
     "AutomationRulesEnabled": {

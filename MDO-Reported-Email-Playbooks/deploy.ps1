@@ -104,7 +104,7 @@ if (-not $SkipAutomationRules) {
             $d2 = Invoke-TemplateDeployment $true
             $rulesOk = $d2.ProvisioningState -eq 'Succeeded'
         } catch {
-            if ($_.Exception.Message -notmatch 'not using Microsoft Sentinel Incident trigger|AuthorizationFailed|does not have permission') { throw }
+            if ($_.Exception.Message -notmatch 'not using Microsoft Sentinel Incident trigger|AuthorizationFailed|does not have permission|Missing required permissions') { throw }
             Write-Host 'Sentinel cannot read the playbooks yet; retrying.'
         }
     }
