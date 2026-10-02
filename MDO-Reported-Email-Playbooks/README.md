@@ -182,7 +182,7 @@ You deploy twice: first the playbooks and their permissions, then the two automa
 
    </details>
 
-4. Create the automation rules: deploy again with the same values and **Deploy Automation Rules** set to `true`. The quickest way is **Redeploy** on the first deployment (the resource group → **Deployments**). If it fails with *Missing required permissions for Microsoft Sentinel on the playbook resource*, Sentinel's permission hasn't taken effect yet. Wait a few minutes and deploy again; redeploying is safe.
+4. Create the automation rules: deploy again with the same values and **Deploy Automation Rules** set to `true`. The quickest way is **Redeploy** on the first deployment (the resource group → **Deployments**). If it fails saying a playbook *is not using Microsoft Sentinel Incident trigger*, Sentinel's permission hasn't taken effect yet. Wait a few minutes and deploy again; redeploying is safe.
 
 Running `deploy.ps1` with the same values does all four steps for you.
 
@@ -250,6 +250,7 @@ In the Defender portal, go to **Settings → Email & collaboration → User repo
 | What you see | Likely cause and fix |
 |---|---|
 | The deployment fails with *Missing required permissions for Microsoft Sentinel on the playbook resource* | The automation rules were deployed before Sentinel had permission on the playbooks' resource group. Everything else was created. Set **Sentinel Service Principal Object Id** (see [Option 2](#option-2-deploy-to-azure)), wait a few minutes, and deploy again with **Deploy Automation Rules** set to `true`. |
+| The deployment fails with *Playbook resource … is not using Microsoft Sentinel Incident trigger* | Sentinel's permission on the playbooks' resource group hasn't taken effect yet. The playbooks do use that trigger. Wait a few minutes and deploy again. |
 | The deployment fails with *RoleAssignmentExists* | Sentinel already has permission on that resource group. Deploy again with **Sentinel Service Principal Object Id** left empty. |
 | **List user reports** fails with 401 or 403 | The Microsoft Graph permission is missing or not active yet. Grant it (see [Deploy](#deploy)), then wait. A managed identity's token can be cached for up to 24 hours, so grant the permission before the first run where you can. |
 | **Add comment** fails with *Forbidden* | The playbook's identity lacks **Microsoft Sentinel Responder** on the workspace. |

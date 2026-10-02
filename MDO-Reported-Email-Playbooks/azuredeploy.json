@@ -46,7 +46,7 @@
       "type": "bool",
       "defaultValue": false,
       "metadata": {
-        "description": "Create the two automation rules that run the Details playbook automatically. Leave false on the first deployment. About two minutes later, deploy again with true: Sentinel can only create the rules once its permission on this resource group has taken effect."
+        "description": "Create the two automation rules that run the Details playbook automatically. Leave false on the first deployment. A few minutes later, deploy again with true: Sentinel can only create the rules once its permission on this resource group has taken effect."
       }
     },
     "AutomationRulesEnabled": {
