@@ -10,7 +10,19 @@ Four Logic Apps playbooks that bring **Microsoft Defender for Office 365 user-re
 - **See the status in the incident.** Each reported email gets a short comment with the analyst verdict, Microsoft's analysis, the sender, the reporter and a working **Open in Submissions** link.
 - **Act from the incident.** Analysts mark the reported emails as **Phishing**, **Spam** or **No threats found** with **Run playbook**, and Microsoft emails the result to each person who reported one.
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FMuatazawad2%2FEmail%2Fmain%2FMDO-Reported-Email-Playbooks%2Fazuredeploy.json)
+There are two ways to set it up. Both create the same playbooks.
+
+<table>
+<tr><th width="50%">Option 1: Deploy with a template</th><th width="50%">Option 2: Build it step by step</th></tr>
+<tr>
+<td valign="top">The <b>Deploy to Azure</b> button or a PowerShell script creates everything for you. About 10 minutes. See the <a href="#option-1-deploy-with-a-template">steps</a>.</td>
+<td valign="top">Build the same playbooks by hand in the Logic Apps designer, with a screenshot for every step. About 90 minutes. See the <a href="docs/build-in-the-portal.md">guide</a>.</td>
+</tr>
+<tr>
+<td align="center"><a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FMuatazawad2%2FEmail%2Fmain%2FMDO-Reported-Email-Playbooks%2Fazuredeploy.json"><img src="https://aka.ms/deploytoazurebutton" alt="Deploy to Azure" height="34"></a></td>
+<td align="center"><a href="docs/build-in-the-portal.md"><img src="docs/images/build-step-by-step-button.png" alt="Build step by step" height="34"></a></td>
+</tr>
+</table>
 
 > [!IMPORTANT]
 > This is a community sample, provided as-is. It isn't a supported Microsoft product. The playbooks call the Microsoft Graph **beta** threat-submission API, which Microsoft doesn't support in production and can change.
@@ -133,33 +145,13 @@ These are from building and testing the playbooks in the Azure and Defender port
 
 ## Deploy
 
-### Option 1: PowerShell (recommended)
+There are two ways to set it up. Both create the same four playbooks, permissions and automation rules.
 
-The script deploys everything, assigns the roles, creates the automation rules and grants the Microsoft Graph permissions. It takes 2–3 minutes and is safe to re-run.
+### Option 1: Deploy with a template
 
-```powershell
-git clone https://github.com/Muatazawad2/Email.git
-cd Email/MDO-Reported-Email-Playbooks
+Use the **Deploy to Azure** button or the PowerShell script. Both deploy the same template, [`azuredeploy.json`](azuredeploy.json).
 
-./deploy.ps1 -SubscriptionId <subscription-id> `
-             -ResourceGroup <playbook-resource-group> `
-             -WorkspaceName <sentinel-workspace-name> `
-             -WorkspaceResourceGroup <workspace-resource-group>
-```
-
-| Parameter | Required | Description |
-|---|---|---|
-| `-SubscriptionId` | Yes | Subscription that holds the Sentinel workspace. |
-| `-ResourceGroup` | Yes | Resource group for the playbooks. It's created in the workspace's region if it doesn't exist. |
-| `-WorkspaceName` | Yes | Name of the Sentinel (Log Analytics) workspace. |
-| `-WorkspaceResourceGroup` | No | The workspace's resource group. Defaults to `-ResourceGroup`. |
-| `-Location` | No | Region for the playbooks. Defaults to the workspace's region. |
-| `-PlaybookPrefix` | No | Name prefix for the playbooks. Defaults to `MDO-Submission`. |
-| `-DisableAutomationRules` | No | Creates the two automation rules switched off. |
-| `-SkipAutomationRules` | No | Doesn't create the automation rules. |
-| `-SkipGraphPermission` | No | Doesn't grant the Microsoft Graph permissions. |
-
-### Option 2: Deploy to Azure
+#### With the Deploy to Azure button
 
 You deploy twice: first the playbooks and their permissions, then the two automation rules. Microsoft Sentinel can only create the rules once its permission on the playbooks' resource group has taken effect.
 
@@ -212,11 +204,35 @@ You deploy twice: first the playbooks and their permissions, then the two automa
 
 4. Create the automation rules: deploy again with the same values and **Deploy Automation Rules** set to `true`. The quickest way is **Redeploy** on the first deployment (the resource group → **Deployments**). If it fails saying a playbook *is not using Microsoft Sentinel Incident trigger*, Sentinel's permission hasn't taken effect yet. Wait a few minutes and deploy again; redeploying is safe.
 
-Running `deploy.ps1` with the same values does all four steps for you.
+#### With PowerShell
 
-### Option 3: Build it by hand
+The script runs all four steps in one go: it deploys everything, assigns the roles, creates the automation rules and grants the Microsoft Graph permissions. It takes 2–3 minutes and is safe to re-run.
 
-To learn the Logic Apps designer, or if you can't deploy templates, follow the step-by-step guide with screenshots: [Build the playbooks in the Logic Apps designer](docs/build-in-the-portal.md).
+```powershell
+git clone https://github.com/Muatazawad2/Email.git
+cd Email/MDO-Reported-Email-Playbooks
+
+./deploy.ps1 -SubscriptionId <subscription-id> `
+             -ResourceGroup <playbook-resource-group> `
+             -WorkspaceName <sentinel-workspace-name> `
+             -WorkspaceResourceGroup <workspace-resource-group>
+```
+
+| Parameter | Required | Description |
+|---|---|---|
+| `-SubscriptionId` | Yes | Subscription that holds the Sentinel workspace. |
+| `-ResourceGroup` | Yes | Resource group for the playbooks. It's created in the workspace's region if it doesn't exist. |
+| `-WorkspaceName` | Yes | Name of the Sentinel (Log Analytics) workspace. |
+| `-WorkspaceResourceGroup` | No | The workspace's resource group. Defaults to `-ResourceGroup`. |
+| `-Location` | No | Region for the playbooks. Defaults to the workspace's region. |
+| `-PlaybookPrefix` | No | Name prefix for the playbooks. Defaults to `MDO-Submission`. |
+| `-DisableAutomationRules` | No | Creates the two automation rules switched off. |
+| `-SkipAutomationRules` | No | Doesn't create the automation rules. |
+| `-SkipGraphPermission` | No | Doesn't grant the Microsoft Graph permissions. |
+
+### Option 2: Build it step by step
+
+Build the same four playbooks yourself in the Azure portal's Logic Apps designer. The [step-by-step guide](docs/build-in-the-portal.md) shows every step with a screenshot and gives every expression to copy, through to the permissions and the two automation rules. Allow about 90 minutes. It's also a good way to learn the designer, and it works where you can't deploy templates.
 
 ## What gets created
 
@@ -277,7 +293,7 @@ In the Defender portal, go to **Settings → Email & collaboration → User repo
 
 | What you see | Likely cause and fix |
 |---|---|
-| The deployment fails with *Missing required permissions for Microsoft Sentinel on the playbook resource* | The automation rules were deployed before Sentinel had permission on the playbooks' resource group. Everything else was created. Set **Sentinel Service Principal Object Id** (see [Option 2](#option-2-deploy-to-azure)), wait a few minutes, and deploy again with **Deploy Automation Rules** set to `true`. |
+| The deployment fails with *Missing required permissions for Microsoft Sentinel on the playbook resource* | The automation rules were deployed before Sentinel had permission on the playbooks' resource group. Everything else was created. Set **Sentinel Service Principal Object Id** (see [the Deploy to Azure steps](#with-the-deploy-to-azure-button)), wait a few minutes, and deploy again with **Deploy Automation Rules** set to `true`. |
 | The deployment fails with *Playbook resource … is not using Microsoft Sentinel Incident trigger* | Sentinel's permission on the playbooks' resource group hasn't taken effect yet. The playbooks do use that trigger. Wait a few minutes and deploy again. |
 | The deployment fails with *RoleAssignmentExists* | Sentinel already has permission on that resource group. Deploy again with **Sentinel Service Principal Object Id** left empty. |
 | **List user reports** fails with 401 or 403 | The Microsoft Graph permission is missing or not active yet. Grant it (see [Deploy](#deploy)), then wait. A managed identity's token can be cached for up to 24 hours, so grant the permission before the first run where you can. |
