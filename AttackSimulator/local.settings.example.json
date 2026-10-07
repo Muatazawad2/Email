@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "SYNC_SCHEDULE": "0 0 * * * *",
+    "STORAGE_ACCOUNT_NAME": "<storage-account-name>",
+    "GRAPH_TENANT_ID": "<tenant-id-that-holds-the-simulations>",
+    "GRAPH_CLIENT_ID": "<app-registration-client-id>",
+    "GRAPH_CLIENT_SECRET": "<app-registration-secret>"
+  }
+}

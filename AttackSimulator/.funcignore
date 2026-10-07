@@ -1,0 +1,13 @@
+.git*
+.vscode
+.venv
+venv
+__pycache__
+local.settings.json
+local.settings.example.json
+tests
+*.md
+docs
+powerbi
+dist
+build-package.ps1
