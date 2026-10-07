@@ -17,12 +17,12 @@ Turn Microsoft Defender for Office 365 **Attack Simulation Training** results in
 <table>
 <tr><th width="50%">Build it step by step</th><th width="50%">Download</th></tr>
 <tr>
-<td valign="top">Create the storage, the app registration and the Function App in the Azure portal, with a screenshot for every step. About 45 minutes. See the <a href="docs/build-in-the-portal.md">guide</a>.</td>
-<td valign="top">The ready-to-run code package and the Power BI template from the <a href="https://github.com/Muatazawad2/Email/releases/tag/attacksimulator-v1.0.0">AttackSimulator v1.0.0 release</a>.</td>
+<td valign="top">Create the storage and the Function App in the Azure portal, with a screenshot for every step. About 40 minutes. See the <a href="docs/build-in-the-portal.md">guide</a>.</td>
+<td valign="top">The Power BI report template and the ready-to-run code package, from the <a href="https://github.com/Muatazawad2/Email/releases/tag/attacksimulator-v1.0.0">AttackSimulator v1.0.0 release</a>.</td>
 </tr>
 <tr>
 <td align="center"><a href="docs/build-in-the-portal.md"><img src="docs/images/build-step-by-step-button.png" alt="Build step by step" height="34"></a></td>
-<td align="center"><a href="https://github.com/Muatazawad2/Email/releases/tag/attacksimulator-v1.0.0"><img src="https://img.shields.io/badge/Download-v1.0.0-2EA44F?style=for-the-badge&logo=github&logoColor=white" alt="Download v1.0.0" height="34"></a></td>
+<td align="center"><a href="https://github.com/Muatazawad2/Email/releases/download/attacksimulator-v1.0.0/ASTReporting.pbit"><img src="https://img.shields.io/badge/Power_BI_template-.pbit-F2C811?style=for-the-badge&logo=powerbi&logoColor=black" alt="Download the Power BI template" height="34"></a> <a href="https://github.com/Muatazawad2/Email/releases/download/attacksimulator-v1.0.0/ast-sync-ready-to-run.zip"><img src="https://img.shields.io/badge/Code_package-.zip-2EA44F?style=for-the-badge&logo=github&logoColor=white" alt="Download the code package" height="34"></a></td>
 </tr>
 </table>
 
@@ -39,7 +39,6 @@ Turn Microsoft Defender for Office 365 **Attack Simulation Training** results in
 - [Power BI report](#power-bi-report)
 - [Settings](#settings)
 - [Run locally](#run-locally)
-- [Credits](#credits)
 
 ## Why
 
@@ -78,12 +77,12 @@ Ten pages, 56 measures and row-level security so each employee can see only thei
 
 ```mermaid
 flowchart LR
-    G["Microsoft Graph<br/>attack simulation API"] -->|every hour, read-only| F["Azure Function<br/>Python · Flex Consumption"]
+    G["Microsoft Graph<br/>attack simulation API"] -->|"every hour, read-only<br/>(managed identity)"| F["Azure Function<br/>Python · Flex Consumption"]
     F -->|managed identity| T[("Azure Table Storage<br/>8 tables")]
     T -->|account key| P["Power BI report<br/>10 pages"]
 ```
 
-The function writes the same seven tables, with the same column names, as [cammurray/ASTSync](https://github.com/cammurray/ASTSync), so reports built on that project keep working:
+The function writes these tables:
 
 | Table | Source (Microsoft Graph) |
 |---|---|
@@ -94,7 +93,7 @@ The function writes the same seven tables, with the same column names, as [cammu
 | `Payloads` | `/beta/security/attackSimulation/payloads` |
 | `TrainingUserCoverage` | `/beta/reports/security/getAttackSimulationTrainingUserCoverage` |
 
-A small `SyncState` table records when Microsoft's catalogues were last refreshed.
+A small `SyncState` table records when Microsoft's catalogues were last refreshed. All Graph access is read-only, through the Function App's managed identity.
 
 **Why it's efficient:**
 
@@ -113,27 +112,27 @@ The [step-by-step guide](docs/build-in-the-portal.md) has a screenshot for every
 <table>
 <tr>
 <td width="25%" valign="top"><a href="docs/build-in-the-portal.md#part-1-resource-group-and-storage-account"><img src="docs/images/cards/01-storage.png" alt="Storage account"></a><br><b>1. Storage account</b><br><sub>Holds the eight tables.</sub></td>
-<td width="25%" valign="top"><a href="docs/build-in-the-portal.md#part-2-app-registration-for-microsoft-graph"><img src="docs/images/cards/02-app-registration.png" alt="App registration"></a><br><b>2. App registration</b><br><sub>Three read-only Graph permissions.</sub></td>
-<td width="25%" valign="top"><a href="docs/build-in-the-portal.md#part-3-function-app"><img src="docs/images/cards/03-function-app.png" alt="Function App"></a><br><b>3. Function App</b><br><sub>Python on Flex Consumption.</sub></td>
-<td width="25%" valign="top"><a href="docs/build-in-the-portal.md#33-authentication"><img src="docs/images/cards/04-authentication.png" alt="Managed identity"></a><br><b>4. Managed identity</b><br><sub>No storage keys in the app.</sub></td>
+<td width="25%" valign="top"><a href="docs/build-in-the-portal.md#part-2-function-app"><img src="docs/images/cards/02-function-app.png" alt="Function App"></a><br><b>2. Function App</b><br><sub>Python on Flex Consumption.</sub></td>
+<td width="25%" valign="top"><a href="docs/build-in-the-portal.md#23-authentication"><img src="docs/images/cards/03-authentication.png" alt="Managed identity"></a><br><b>3. Managed identity</b><br><sub>No keys or secrets in the app.</sub></td>
+<td width="25%" valign="top"><a href="docs/build-in-the-portal.md#part-3-let-the-function-app-write-to-the-tables"><img src="docs/images/cards/04-table-role.png" alt="Table role"></a><br><b>4. Table role</b><br><sub>Let the app write its tables.</sub></td>
 </tr>
 <tr>
-<td valign="top"><a href="docs/build-in-the-portal.md#part-4-let-the-function-app-write-to-the-tables"><img src="docs/images/cards/05-table-role.png" alt="Table role"></a><br><b>5. Table role</b><br><sub>Let the app write its tables.</sub></td>
-<td valign="top"><a href="docs/build-in-the-portal.md#51-app-settings"><img src="docs/images/cards/06-settings.png" alt="App settings"></a><br><b>6. App settings</b><br><sub>Five settings, one secret.</sub></td>
+<td valign="top"><a href="docs/build-in-the-portal.md#part-4-let-the-function-app-read-microsoft-graph"><img src="docs/images/cards/05-graph-permissions.png" alt="Graph permissions"></a><br><b>5. Graph permissions</b><br><sub>Three read-only permissions.</sub></td>
+<td valign="top"><a href="docs/build-in-the-portal.md#51-app-settings"><img src="docs/images/cards/06-settings.png" alt="App settings"></a><br><b>6. App settings</b><br><sub>Two settings.</sub></td>
 <td valign="top"><a href="docs/build-in-the-portal.md#52-deploy-the-code"><img src="docs/images/cards/07-deploy.png" alt="Deploy the code"></a><br><b>7. Deploy the code</b><br><sub>Upload one zip, no tools.</sub></td>
 <td valign="top"><a href="docs/build-in-the-portal.md#part-6-first-run"><img src="docs/images/cards/08-first-run.png" alt="First run"></a><br><b>8. First run</b><br><sub>Then connect Power BI.</sub></td>
 </tr>
 </table>
 ## Deploy
 
-**[Build it in the portal](docs/build-in-the-portal.md)**: a step-by-step guide with screenshots. It covers the storage account, the app registration, the Function App, the role assignment, the settings, the code upload and connecting the Power BI report.
+**[Build it in the portal](docs/build-in-the-portal.md)**: a step-by-step guide with screenshots. It covers the storage account, the Function App and its managed identity, the table role, the Graph permissions, the settings, the code upload and connecting the Power BI report.
 
 Download from the [AttackSimulator v1.0.0 release](https://github.com/Muatazawad2/Email/releases/tag/attacksimulator-v1.0.0):
 
 | File | What it is |
 |---|---|
-| `ast-sync-ready-to-run.zip` | The code plus its Python packages (Linux x86-64, Python 3.12), for the portal's **Deployment Center > Publish files** |
-| `ASTReporting.pbit` | The ten-page Power BI report template (also in [`powerbi/`](powerbi)) |
+| [`ast-sync-ready-to-run.zip`](https://github.com/Muatazawad2/Email/releases/download/attacksimulator-v1.0.0/ast-sync-ready-to-run.zip) | The code plus its Python packages (Linux x86-64, Python 3.12), for the portal's **Deployment Center > Publish files** |
+| [`ASTReporting.pbit`](https://github.com/Muatazawad2/Email/releases/download/attacksimulator-v1.0.0/ASTReporting.pbit) | The ten-page Power BI report template (also in [`powerbi/`](powerbi)) |
 
 To build the zip yourself, run `.\build-package.ps1` from this folder.
 
@@ -161,16 +160,16 @@ No gateway is needed. When the storage key rotates, update it in step 2.
 |---|---|---|
 | `SYNC_SCHEDULE` | Yes | CRON schedule, for example `0 0 * * * *` (top of every hour) |
 | `STORAGE_ACCOUNT_NAME` | Yes | Table Storage account. The Function App's managed identity needs **Storage Table Data Contributor** on it. |
-| `GRAPH_TENANT_ID` | Cross-tenant only | Tenant that holds the simulation data |
-| `GRAPH_CLIENT_ID` | Cross-tenant only | App registration with `AttackSimulation.Read.All`, `Reports.Read.All` and `User.Read.All` (application) |
-| `GRAPH_CLIENT_SECRET` | Cross-tenant only | Secret for that app registration |
+| `GRAPH_TENANT_ID` | Another tenant only | Tenant that holds the simulation data |
+| `GRAPH_CLIENT_ID` | Another tenant only | App registration with `AttackSimulation.Read.All`, `Reports.Read.All` and `User.Read.All` (application) |
+| `GRAPH_CLIENT_SECRET` | Another tenant only | Secret for that app registration |
 | `SYNC_ENTRA_USERS` | No | `false` to skip user profiles (default `true`) |
 | `USER_REFRESH_DAYS` | No | Re-read a user's profile after this many days (default `7`) |
 | `SIM_RESYNC_DAYS` | No | Re-read users of simulations completed within this many days (default `7`) |
 | `CATALOGUE_REFRESH_HOURS` | No | Refresh Microsoft's catalogues this often (default `24`) |
 | `MAX_PARALLEL_SIMULATIONS` | No | Simulations read at the same time (default `4`) |
 
-When the three `GRAPH_*` settings are omitted, the Function App's own managed identity is used for Graph (same-tenant deployments).
+By default the Function App uses its own managed identity for Graph, which needs the three permissions above (see [Part 4 of the guide](docs/build-in-the-portal.md#part-4-let-the-function-app-read-microsoft-graph)). Set the three `GRAPH_*` settings only when Microsoft 365 is [in another tenant](docs/build-in-the-portal.md#if-azure-and-microsoft-365-are-in-different-tenants).
 
 ## Run locally
 
@@ -182,10 +181,6 @@ $env:STORAGE_CONNECTION_STRING = "<connection string>"   # or STORAGE_ACCOUNT_NA
 $env:GRAPH_TENANT_ID = "..."; $env:GRAPH_CLIENT_ID = "..."; $env:GRAPH_CLIENT_SECRET = "..."
 python ast_sync.py
 ```
-
-## Credits
-
-Table design and Graph mapping follow [Cam Murray's ASTSync](https://github.com/cammurray/ASTSync).
 
 ---
 

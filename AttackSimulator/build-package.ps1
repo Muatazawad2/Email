@@ -9,6 +9,9 @@
 
 .EXAMPLE
     .\build-package.ps1            # creates .\dist\ast-sync-ready-to-run.zip
+
+.NOTES
+    Developer: Dr. Muataz Awad
 #>
 param([string] $Output = "dist\ast-sync-ready-to-run.zip")
 

@@ -1,16 +1,17 @@
 """Attack Simulation Training -> Azure Table Storage sync.
 
-Reads Microsoft Graph attack-simulation data and writes it to seven tables
-(Simulations, SimulationUsers, SimulationUserEvents, Users, Trainings,
-Payloads, TrainingUserCoverage) with the same table and column names as
-cammurray/ASTSync, so existing Power BI reports keep working.
+Reads Microsoft Graph attack-simulation data and writes it to the tables the
+Power BI report reads (Simulations, SimulationUsers, SimulationUserEvents,
+Users, Trainings, Payloads, TrainingUserCoverage).
+
+Developer: Dr. Muataz Awad
 
 Configuration (app settings or environment variables):
     STORAGE_ACCOUNT_NAME      Table Storage account (managed identity is used)
     STORAGE_CONNECTION_STRING Optional; overrides managed identity (local runs)
-    GRAPH_TENANT_ID           Tenant that holds the simulation data
-    GRAPH_CLIENT_ID           App registration (omit to use managed identity)
-    GRAPH_CLIENT_SECRET       App registration secret (omit to use managed identity)
+    GRAPH_TENANT_ID           Another tenant only: tenant that holds the simulation data
+    GRAPH_CLIENT_ID           Another tenant only: app registration (omit to use managed identity)
+    GRAPH_CLIENT_SECRET       Another tenant only: app registration secret
     SYNC_ENTRA_USERS          "true" (default) to enrich users from Entra ID
     USER_REFRESH_DAYS         Re-read a user's profile after this many days (default 7)
     SIM_RESYNC_DAYS           Re-read users of simulations completed within this many days (default 7)
@@ -66,7 +67,7 @@ def _dt(value: str | None) -> datetime | None:
 
 
 def _enum(value: Any) -> str | None:
-    # Graph JSON returns camelCase enum values; the C# SDK (and existing reports) use PascalCase.
+    # Graph JSON returns camelCase enum values; the report expects PascalCase.
     if value is None:
         return None
     text = str(value)
