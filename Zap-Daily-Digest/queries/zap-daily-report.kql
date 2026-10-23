@@ -1,0 +1,8 @@
+EmailPostDeliveryEvents
+| where Timestamp > ago(1d)
+| where ActionType has 'ZAP' or ActionType has 'Manual'
+| where RecipientEmailAddress =~ 'user@example.com'
+| join kind=leftouter (EmailEvents | where Timestamp > ago(1d) | project NetworkMessageId, Subject) on NetworkMessageId
+| project Timestamp, ActionType, ActionResult, RecipientEmailAddress, SenderFromAddress, Subject, DeliveryLocation, ThreatTypes, NetworkMessageId
+| order by Timestamp desc
+| take 500

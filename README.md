@@ -8,6 +8,7 @@ PowerShell tools and Microsoft security automation for email.
 | [**AttackSimulator**](AttackSimulator/) | Hourly Azure Function (Python) that copies Defender for Office 365 **Attack Simulation Training** results from Microsoft Graph to Azure Table Storage, with a ten-page Power BI report and a step-by-step portal guide. |
 | [**EmailDnsAudit**](EmailDnsAudit/) | PowerShell module that checks domains for MX, SPF, DMARC and DKIM records and produces console, HTML, CSV and JSON reports. |
 | [**AttackSim-RepeatOffenders**](AttackSim-RepeatOffenders/) | PowerShell script that builds a Defender for Office 365 Attack Simulation Training repeat-offender report using a custom, configurable rule (clicks in a rolling window) instead of the portal's fixed consecutive-compromise definition. |
+| [**Zap-Daily-Digest**](Zap-Daily-Digest/) | Daily email digest of zero-hour auto purge (ZAP) and manual remediation actions from Microsoft Defender advanced hunting, with three deployment options (Power Automate, Logic App, custom detection rule). |
 
 Each project has its own folder and README.
 

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="360" viewBox="0 0 900 360" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <rect width="900" height="360" fill="#F3F2F1"/>
+  <rect x="40" y="30" width="820" height="300" rx="12" fill="#FFFFFF" stroke="#C8C6C4"/>
+  <path d="M40 42 A12 12 0 0 1 52 30 H848 A12 12 0 0 1 860 42 V64 H40 Z" fill="#F3F2F1"/>
+  <line x1="40" y1="64" x2="860" y2="64" stroke="#EDEBE9"/>
+  <text x="60" y="52" font-size="13" fill="#605E5C">Inbox</text>
+  <text x="840" y="52" font-size="12" fill="#A19F9D" text-anchor="end">Daily digest</text>
+  <circle cx="84" cy="100" r="20" fill="#0078D4"/>
+  <text x="84" y="106" font-size="16" font-weight="600" fill="#FFFFFF" text-anchor="middle">A</text>
+  <text x="116" y="96" font-size="15" font-weight="600" fill="#201F1E">admin@example.com</text>
+  <text x="116" y="116" font-size="12.5" fill="#605E5C">To: admin@example.com</text>
+  <text x="836" y="96" font-size="12.5" fill="#605E5C" text-anchor="end">7:00 AM</text>
+  <text x="84" y="152" font-size="16" font-weight="600" fill="#201F1E">Daily ZAP and manual remediation report for user@example.com</text>
+  <line x1="60" y1="168" x2="840" y2="168" stroke="#EDEBE9"/>
+  <rect x="60" y="182" width="780" height="30" fill="#0078D4"/>
+  <text x="68" y="201" font-size="12.5" font-weight="600" fill="#FFFFFF">Timestamp</text>
+  <text x="238" y="201" font-size="12.5" font-weight="600" fill="#FFFFFF">ActionType</text>
+  <text x="388" y="201" font-size="12.5" font-weight="600" fill="#FFFFFF">ActionResult</text>
+  <text x="488" y="201" font-size="12.5" font-weight="600" fill="#FFFFFF">SenderFromAddress</text>
+  <text x="658" y="201" font-size="12.5" font-weight="600" fill="#FFFFFF">Subject</text>
+  <rect x="60" y="212" width="780" height="30" fill="#FFFFFF"/>
+  <text x="68" y="231" font-size="13" fill="#201F1E">2026-06-01T14:20:03Z</text>
+  <text x="238" y="231" font-size="13" fill="#201F1E">Manual Remediation</text>
+  <text x="388" y="231" font-size="13" font-weight="600" fill="#107C10">Success</text>
+  <text x="488" y="231" font-size="13" fill="#201F1E">sender@contoso.example</text>
+  <text x="658" y="231" font-size="13" fill="#201F1E">Quarterly invoice</text>
+  <rect x="60" y="242" width="780" height="30" fill="#FAF9F8"/>
+  <text x="68" y="261" font-size="13" fill="#201F1E">2026-06-01T15:02:41Z</text>
+  <text x="238" y="261" font-size="13" fill="#201F1E">ZAP</text>
+  <text x="388" y="261" font-size="13" font-weight="600" fill="#107C10">Success</text>
+  <text x="488" y="261" font-size="13" fill="#201F1E">promo@fabrikam.example</text>
+  <text x="658" y="261" font-size="13" fill="#201F1E">Your account is on hold</text>
+  <rect x="60" y="272" width="780" height="30" fill="#FFFFFF"/>
+  <text x="68" y="291" font-size="13" fill="#201F1E">2026-06-01T16:45:12Z</text>
+  <text x="238" y="291" font-size="13" fill="#201F1E">Manual Remediation</text>
+  <text x="388" y="291" font-size="13" font-weight="600" fill="#107C10">Success</text>
+  <text x="488" y="291" font-size="13" fill="#201F1E">notice@adatum.example</text>
+  <text x="658" y="291" font-size="13" fill="#201F1E">Action required</text>
+  <rect x="60" y="182" width="780" height="120" fill="none" stroke="#EDEBE9"/>
+  <line x1="60" y1="242" x2="840" y2="242" stroke="#EDEBE9"/>
+  <line x1="60" y1="272" x2="840" y2="272" stroke="#EDEBE9"/>
+  <text x="860" y="352" font-size="12" fill="#605E5C" text-anchor="end">Synthetic sample data for illustration</text>
+</svg>

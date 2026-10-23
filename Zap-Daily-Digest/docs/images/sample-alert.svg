@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="400" viewBox="0 0 900 400" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <clipPath id="card">
+      <rect x="40" y="30" width="820" height="340" rx="12"/>
+    </clipPath>
+  </defs>
+  <rect width="900" height="400" fill="#F3F2F1"/>
+  <g clip-path="url(#card)">
+    <rect x="40" y="30" width="820" height="340" fill="#FFFFFF"/>
+    <rect x="40" y="30" width="8" height="340" fill="#CA5010"/>
+  </g>
+  <rect x="40" y="30" width="820" height="340" rx="12" fill="none" stroke="#C8C6C4"/>
+  <rect x="72" y="56" width="92" height="26" rx="13" fill="#CA5010"/>
+  <text x="118" y="74" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">Medium</text>
+  <text x="178" y="74" font-size="12.5" fill="#605E5C">New alert  ·  Custom detection  ·  Continuous (NRT)</text>
+  <text x="72" y="122" font-size="20" font-weight="600" fill="#201F1E">ZAP or manual remediation on mail for user@example.com</text>
+  <text x="72" y="148" font-size="13.5" fill="#605E5C">A message for this mailbox was moved by ZAP or a manual remediation action.</text>
+  <line x1="72" y1="168" x2="828" y2="168" stroke="#EDEBE9"/>
+  <text x="72" y="194" font-size="12" fill="#605E5C">Detection source</text>
+  <text x="72" y="212" font-size="14" fill="#201F1E">Custom detection</text>
+  <text x="330" y="194" font-size="12" fill="#605E5C">Impacted asset</text>
+  <text x="330" y="212" font-size="14" fill="#201F1E">Mailbox user@example.com</text>
+  <text x="610" y="194" font-size="12" fill="#605E5C">Time</text>
+  <text x="610" y="212" font-size="14" fill="#201F1E">2026-06-01 14:20 UTC</text>
+  <text x="72" y="248" font-size="12" fill="#605E5C">Incident correlation</text>
+  <text x="72" y="266" font-size="14" fill="#201F1E">Enabled</text>
+  <text x="330" y="248" font-size="12" fill="#605E5C">Automated actions</text>
+  <text x="330" y="266" font-size="14" fill="#201F1E">None</text>
+  <text x="610" y="248" font-size="12" fill="#605E5C">Scheduling</text>
+  <text x="610" y="266" font-size="14" fill="#201F1E">Continuous (NRT)</text>
+  <rect x="72" y="290" width="756" height="44" rx="8" fill="#F3F2F1"/>
+  <text x="88" y="316" font-size="13" fill="#201F1E"><tspan font-weight="600">ActionType</tspan> Manual Remediation <tspan fill="#A19F9D">·</tspan> <tspan font-weight="600">ActionResult</tspan> Success <tspan fill="#A19F9D">·</tspan> <tspan font-weight="600">DeliveryLocation</tspan> Junk folder</text>
+  <text x="72" y="356" font-size="12" fill="#605E5C">Incident email sent to admin@example.com</text>
+  <text x="860" y="392" font-size="12" fill="#605E5C" text-anchor="end">Synthetic sample data for illustration</text>
+</svg>

@@ -1,0 +1,5 @@
+EmailPostDeliveryEvents
+| where Timestamp > datetime(2026-01-01T00:00:00Z)
+| where ActionType has "ZAP" or ActionType has "Manual"
+| where RecipientEmailAddress =~ "user@example.com"
+| project Timestamp, ActionType, ActionResult, RecipientEmailAddress, DeliveryLocation, NetworkMessageId, ReportId
