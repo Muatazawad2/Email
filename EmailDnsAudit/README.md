@@ -74,3 +74,7 @@ The filters apply to the console output and to the reports.
 ---
 
 **Developer**: Dr. Muataz Awad
+
+---
+
+*Personal project — not an official Microsoft product. [Full disclaimer](../README.md#disclaimer).*

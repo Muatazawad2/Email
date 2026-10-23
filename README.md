@@ -17,3 +17,9 @@ Each project has its own folder and README.
 ---
 
 **Developer**: Dr. Muataz Awad
+
+---
+
+## Disclaimer
+
+This is a personal project I maintain in an individual capacity. It is **not an official Microsoft product** and is not endorsed, reviewed, or supported by Microsoft. All opinions, code, and content here are my own and do not represent the views of my employer. Provided **"as-is"**, with no warranty — use at your own risk.

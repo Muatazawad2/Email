@@ -185,3 +185,7 @@ python ast_sync.py
 ---
 
 **Developer**: Dr. Muataz Awad
+
+---
+
+*Personal project — not an official Microsoft product. [Full disclaimer](../README.md#disclaimer).*

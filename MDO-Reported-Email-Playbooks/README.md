@@ -337,3 +337,7 @@ Tested end to end in a lab tenant with Microsoft Defender XDR and Microsoft Sent
 ---
 
 **Developer**: Dr. Muataz Awad
+
+---
+
+*Personal project — not an official Microsoft product. [Full disclaimer](../README.md#disclaimer).*
